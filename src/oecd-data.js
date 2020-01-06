@@ -1,12 +1,12 @@
 'use strict';
 
-var oecdService = require('./oecd-service');
+var oecdService = require('./oecd-service-agent');
 
 function OECDData() {
-    const oecdServiceObj = new oecdService.OECDService();
+    const oecdServiceAgentObj = new oecdService.OECDServiceAgent();
 
     this.getDataSet = function (dataSetId) {
-        return oecdServiceObj.getDataSet(dataSetId);
+        return oecdServiceAgentObj.getDataSet(dataSetId);
     }
 
     this.getSeriesKeyId = function (seriesKey, dimensions) {

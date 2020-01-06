@@ -2,7 +2,7 @@
 
 var request = require('request');
 
-function OECDService() {
+function OECDServiceAgent() {
     this.getDataSet = function (dataSetId) {
         var path = '/SDMX-JSON/data/' + dataSetId;
         console.log(path);
@@ -21,4 +21,4 @@ function OECDService() {
     }
 }
 
-module.exports.OECDService = OECDService;
+module.exports.OECDServiceAgent = OECDServiceAgent;
