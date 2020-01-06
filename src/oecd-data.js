@@ -149,7 +149,7 @@ function OECDData() {
                 }
             }
         } finally {
-            writeStream.end();
+            if (writeStream) writeStream.end();
         }
     }
 }
