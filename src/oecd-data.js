@@ -1,22 +1,30 @@
 'use strict';
 
 const fs = require('fs');
-var oecdService = require('./oecd-service-agent');
+var OECDServiceAgent = require('./oecd-service-agent');
 
 function OECDData() {
-    const oecdServiceAgentObj = new oecdService.OECDServiceAgent();
+    const oecdServiceAgent = new OECDServiceAgent();
 
     this.getDataSet = function (dataSetId) {
-        return oecdServiceAgentObj.getDataSet(dataSetId);
+        return oecdServiceAgent.getDataSet(dataSetId);
     }
 
-    this.getSeriesKeyId = function (seriesKey) {
+    this.splitSeriesKey = function (seriesKey) {
         var seriesIdArr = seriesKey.split(':');
         return seriesIdArr;
     }
 
-    this.getSeriesKeyCode = function (seriesKey, dimensions) {
-        var seriesIdArr = this.getSeriesKeyId(seriesKey);
+    this.getSeriesKeyIds = function (dimensions) {
+        var newSeriesKey = [];
+        for (var i = 0; i < dimensions.series.length; ++i) {
+            newSeriesKey.push(dimensions.series[i].id);
+        }
+        return newSeriesKey;
+    }
+
+    this.getSeriesKeyCodes = function (seriesKey, dimensions) {
+        var seriesIdArr = this.splitSeriesKey(seriesKey);
         var newSeriesKey = [];
         for (var i = 0; i < seriesIdArr.length; ++i) {
             newSeriesKey.push(dimensions.series[i].values[seriesIdArr[i]].id);
@@ -24,8 +32,8 @@ function OECDData() {
         return newSeriesKey;
     }
 
-    this.getSeriesKeyName = function (seriesKey, dimensions) {
-        var seriesIdArr = this.getSeriesKeyId(seriesKey);
+    this.getSeriesKeyNames = function (seriesKey, dimensions) {
+        var seriesIdArr = this.splitSeriesKey(seriesKey);
         var newSeriesKey = [];
         for (var i = 0; i < seriesIdArr.length; ++i) {
             newSeriesKey.push(dimensions.series[i].values[seriesIdArr[i]].name);
@@ -42,39 +50,39 @@ function OECDData() {
         return seriesKeyStr;
     }
 
-    this.getSeriesKeyCodes = function (dataSet) {
+    this.getSeriesKeyCodesMap = function (dataSet) {
         var respJson = dataSet;
         //console.log(respJson.header.id);
         var seriesKeyDict = {};
         var seriesKeyCode = null;
         for (var seriesKey in respJson.dataSets[0].series) {
-            seriesKeyCode = this.getSeriesKeyCode(seriesKey, respJson.structure.dimensions);
+            seriesKeyCode = this.getSeriesKeyCodes(seriesKey, respJson.structure.dimensions);
             seriesKeyDict[seriesKey] = seriesKeyCode;
         }
         return seriesKeyDict;
     }
 
-    this.getSeriesKeyNames = function (dataSet) {
+    this.getSeriesKeyNamesMap = function (dataSet) {
         var respJson = dataSet;
         //console.log(respJson.header.id);
         var seriesKeyDict = {};
         var seriesKeyName = null;
         for (var seriesKey in respJson.dataSets[0].series) {
-            seriesKeyName = this.getSeriesKeyName(seriesKey, respJson.structure.dimensions);
+            seriesKeyName = this.getSeriesKeyNames(seriesKey, respJson.structure.dimensions);
             seriesKeyDict[seriesKey] = seriesKeyName;
         }
         return seriesKeyDict;
     }
 
-    this.getSeriesAttributeId = function (seriesAttr, attributes) {
+    this.getSeriesAttributeIds = function (attributes) {
         var newSeriesAttr = [];
-        for (var i = 0; i < seriesAttr.length; ++i) {
+        for (var i = 0; i < attributes.series.length; ++i) {
             newSeriesAttr.push(attributes.series[i].id);
         }
         return newSeriesAttr;
     } 
 
-    this.getSeriesAttributeName = function (seriesAttr, attributes) {
+    this.getSeriesAttributeNames = function (seriesAttr, attributes) {
         var newSeriesAttr = [];
         for (var i = 0; i < seriesAttr.length; ++i) {
             newSeriesAttr.push(attributes.series[i].name);
@@ -82,7 +90,7 @@ function OECDData() {
         return newSeriesAttr;
     } 
 
-    this.getSeriesAttributeValueCode = function (seriesAttr, attributes) {
+    this.getSeriesAttributeValueCodes = function (seriesAttr, attributes) {
         var newSeriesAttr = [];
         for (var i = 0; i < seriesAttr.length; ++i) {
             if (seriesAttr[i] != null) {
@@ -94,7 +102,7 @@ function OECDData() {
         return newSeriesAttr;
     }
 
-    this.getSeriesAttributeValueName = function (seriesAttr, attributes) {
+    this.getSeriesAttributeValueNames = function (seriesAttr, attributes) {
         var newSeriesAttr = [];
         for (var i = 0; i < seriesAttr.length; ++i) {
             if (seriesAttr[i] != null) {
@@ -108,43 +116,59 @@ function OECDData() {
 
     this.writeToCSV = function (filePath, dataSet) {
         var respJson = dataSet;
+        var header = '';
+        var seriesKeyIds = [];
+        var seriesAttrIds = [];
         var rowSeriesKey = '';
         var rowSeriesAttr = '';
         var row = '';
         var series = {};
-        var seriesKeyId = [];
-        var seriesKeyCode = [];
-        var seriesKeyName = [];
+        var splitSeriesKeyArr = [];
+        var seriesKeyCodeArr = [];
+        var seriesKeyNameArr = [];
         var seriesAttr = [];
-        var seriesAttrValueCode = [];
-        var seriesAttrValueName = [];
+        var seriesAttrValueCodes = [];
+        var seriesAttrValueNames = [];
         var seriesObs = {};
 
         let writeStream = fs.createWriteStream(filePath);
         try {
+            header = '';
+            seriesKeyIds = this.getSeriesKeyIds(respJson.structure.dimensions);
+            for (var i = 0; i < seriesKeyIds.length; ++i) {
+                if (header) header += ',';
+                header += 'SERIESIDX' + i + ',' + seriesKeyIds[i] + '_ID' + ',' + seriesKeyIds[i] + '_NAME';
+            }
+            seriesAttrIds = this.getSeriesAttributeIds(respJson.structure.attributes);
+            for (var i = 0; i < seriesAttrIds.length; ++i) {
+                if (header) header += ',';
+                header += 'SERIESATTRIDX' + i + ',' + seriesAttrIds[i] + '_ID' + ',' + seriesAttrIds[i] + '_NAME';
+            }
+            header += ',' + 'SERIESATTRVALIDX' + ',' + 'SERIESATTRVAL';
+            writeStream.write(header + '\n');
             series = respJson.dataSets[0].series;
             for (var seriesKey in series) {
                 rowSeriesKey = '';
-                seriesKeyId = this.getSeriesKeyId(seriesKey);
-                seriesKeyCode = this.getSeriesKeyCode(seriesKey, respJson.structure.dimensions);
-                seriesKeyName = this.getSeriesKeyName(seriesKey, respJson.structure.dimensions);
-                for (var seriesKeyCount = 0; seriesKeyCount < seriesKeyCode.length; ++seriesKeyCount) {
+                splitSeriesKeyArr = this.splitSeriesKey(seriesKey);
+                seriesKeyCodeArr = this.getSeriesKeyCodes(seriesKey, respJson.structure.dimensions);
+                seriesKeyNameArr = this.getSeriesKeyNames(seriesKey, respJson.structure.dimensions);
+                for (var seriesKeyCount = 0; seriesKeyCount < seriesKeyCodeArr.length; ++seriesKeyCount) {
                     if (seriesKeyCount > 0) rowSeriesKey += ',';
-                    rowSeriesKey += seriesKeyId[seriesKeyCount] + ',' + seriesKeyCode[seriesKeyCount] + ',' + seriesKeyName[seriesKeyCount];
+                    rowSeriesKey += '"' + splitSeriesKeyArr[seriesKeyCount] + '"' + ',' + '"' + seriesKeyCodeArr[seriesKeyCount] + '"' + ',' + '"' + seriesKeyNameArr[seriesKeyCount] + '"';
                 }
 
                 rowSeriesAttr = '';
                 seriesAttr = series[seriesKey].attributes;
-                seriesAttrValueCode = this.getSeriesAttributeValueCode(seriesAttr, respJson.structure.attributes);
-                seriesAttrValueName = this.getSeriesAttributeValueName(seriesAttr, respJson.structure.attributes);
+                seriesAttrValueCodes = this.getSeriesAttributeValueCodes(seriesAttr, respJson.structure.attributes);
+                seriesAttrValueNames = this.getSeriesAttributeValueNames(seriesAttr, respJson.structure.attributes);
                 for (var seriesAttrCount = 0; seriesAttrCount < seriesAttr.length; ++seriesAttrCount) {
                     if (seriesAttrCount > 0) rowSeriesAttr += ',';
-                    rowSeriesAttr += seriesAttr[seriesAttrCount] + ',' + seriesAttrValueCode[seriesAttrCount] + ',' + seriesAttrValueName[seriesAttrCount];
+                    rowSeriesAttr += '"' + seriesAttr[seriesAttrCount] + '"' + ',' + '"' + seriesAttrValueCodes[seriesAttrCount] + '"' + ',' + '"' + seriesAttrValueNames[seriesAttrCount] + '"';
                 }
 
                 seriesObs = series[seriesKey].observations;
                 for (var seriesObsKey in seriesObs) {
-                    row = rowSeriesKey + ',' + rowSeriesAttr + ',' + seriesObsKey + ',' + seriesObs[seriesObsKey][0];
+                    row = rowSeriesKey + ',' + rowSeriesAttr + ',' + seriesObsKey + ',' + '"' + seriesObs[seriesObsKey][0] + '"';
                     writeStream.write(row + '\n');
                 }
             }
@@ -154,22 +178,22 @@ function OECDData() {
     }
 }
 
-module.exports.OECDData = OECDData;
+module.exports = OECDData;
 
 var dataSetId = 'HH_DASH';
-var oecdDataObj = new OECDData();
-var requestPromise = oecdDataObj.getDataSet(dataSetId);
+var oecdData = new OECDData();
+var requestPromise = oecdData.getDataSet(dataSetId);
 //https://javascript.info/promise-basics
 requestPromise.then(
     result => {
         var respJson = result;
         // console.log(respJson.header.id);
-        // var seriesKeyCodeDict = oecdDataObj.getSeriesKeyCodes(respJson);
-        // var seriesKeyNameDict = oecdDataObj.getSeriesKeyNames(respJson);
-        // for (var seriesKey in seriesKeyIdDict) {
-        //     console.log(seriesKey + ', ' + oecdDataObj.getSeriesKeyString(seriesKeyCodeDict[seriesKey]) + ', ' + oecdDataObj.getSeriesKeyString(seriesKeyNameDict[seriesKey]));
+        // var seriesKeyCodeDict = oecdData.getSeriesKeyCodesMap(respJson);
+        // var seriesKeyNameDict = oecdData.getSeriesKeyNamesMap(respJson);
+        // for (var seriesKey in splitSeriesKeyArrDict) {
+        //     console.log(seriesKey + ', ' + oecdData.getSeriesKeyString(seriesKeyCodeDict[seriesKey]) + ', ' + oecdData.getSeriesKeyString(seriesKeyNameDict[seriesKey]));
         // }
-        oecdDataObj.writeToCSV(dataSetId + '.csv', respJson);
+        oecdData.writeToCSV(dataSetId + '.csv', respJson);
     },
     error => {
         console.error('PANIC! Something is very wrong here.');
