@@ -154,7 +154,9 @@ function OECDData() {
                 seriesKeyNameArr = this.getSeriesKeyNames(seriesKey, respJson.structure.dimensions);
                 for (var seriesKeyCount = 0; seriesKeyCount < seriesKeyCodeArr.length; ++seriesKeyCount) {
                     if (seriesKeyCount > 0) rowSeriesKey += ',';
-                    rowSeriesKey += '"' + splitSeriesKeyArr[seriesKeyCount] + '"' + ',' + '"' + seriesKeyCodeArr[seriesKeyCount] + '"' + ',' + '"' + seriesKeyNameArr[seriesKeyCount] + '"';
+                    rowSeriesKey += '"' + (splitSeriesKeyArr[seriesKeyCount] !== null ? splitSeriesKeyArr[seriesKeyCount] : '') + '"';
+                    rowSeriesKey += ',' + '"' + (seriesKeyCodeArr[seriesKeyCount] !== null ? seriesKeyCodeArr[seriesKeyCount] : '') + '"';
+                    rowSeriesKey += ',' + '"' + (seriesKeyNameArr[seriesKeyCount] !== null ? seriesKeyNameArr[seriesKeyCount] : '') + '"';
                 }
 
                 rowSeriesAttr = '';
@@ -163,7 +165,9 @@ function OECDData() {
                 seriesAttrValueNames = this.getSeriesAttributeValueNames(seriesAttr, respJson.structure.attributes);
                 for (var seriesAttrCount = 0; seriesAttrCount < seriesAttr.length; ++seriesAttrCount) {
                     if (seriesAttrCount > 0) rowSeriesAttr += ',';
-                    rowSeriesAttr += '"' + seriesAttr[seriesAttrCount] + '"' + ',' + '"' + seriesAttrValueCodes[seriesAttrCount] + '"' + ',' + '"' + seriesAttrValueNames[seriesAttrCount] + '"';
+                    rowSeriesAttr += '"' + (seriesAttr[seriesAttrCount] !== null ? seriesAttr[seriesAttrCount] : '') + '"';
+                    rowSeriesAttr += ',' + '"' + (seriesAttrValueCodes[seriesAttrCount] !== null ? seriesAttrValueCodes[seriesAttrCount] : '') + '"';
+                    rowSeriesAttr += ',' + '"' + (seriesAttrValueNames[seriesAttrCount] !== null ? seriesAttrValueNames[seriesAttrCount] : '') + '"';
                 }
 
                 seriesObs = series[seriesKey].observations;
