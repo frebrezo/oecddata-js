@@ -12,10 +12,17 @@ function OECDServiceAgent() {
                 function (error, response, body) {
                     if (error) {
                         console.error('error:', error); // Print the error if one occurred
-                        console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-                        console.log(body);
+                        console.error('statusCode:', response.statusCode); // Print the response status code if a response was received
+                        console.error(body);
+                        resolve(null);
+                    } else {
+                        try {
+                            resolve(JSON.parse(body));
+                        } catch (e) {
+                            console.error(body);
+                            resolve(null);
+                        }
                     }
-                    resolve(JSON.parse(body));
                 });
         });
 

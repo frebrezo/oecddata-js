@@ -1,33 +1,40 @@
 const express = require('express');
-const app = express();
-const OECDData = require('./oecd-data');
+const OECDDataCache = require('./oecd-data-cache');
+const OECDDataService = require ('./oecd-data-service');
 
-var oecdData = new OECDData();
+const app = express();
+const oecdData = new OECDDataCache();
+const oecdDataService = new OECDDataService();
 
 app.get('/', (req, res) => {
   res.send('Hello from App Engine!');
 });
 
-app.get('/:dataSetId', (req, res) => {
-    res.send('Retrieving ' + req.params.dataSetId);
+app.get('/data/:dataSetId', (req, res) => {
+    var dataSetId = req.params.dataSetId;
+    console.log('/data/' + dataSetId);
+    var dataSetPromise = oecdData.getDataSet(dataSetId);
+    dataSetPromise.then(result => {
+        res.send(result);
+    });
 });
 
-app.get('/:dataSetId/metadata/dimensions', (req, res) => {
+app.get('/data/:dataSetId/metadata/dimensions', (req, res) => {
     var dataSetId = req.params.dataSetId;
+    console.log('/data/' + dataSetId + '/metadata/dimensions');
     var dataSetPromise = oecdData.getDataSet(dataSetId);
-    //https://javascript.info/promise-basics
     dataSetPromise.then(result => {
-        var dimensions = oecdData.getDimensions(result);
+        var dimensions = oecdDataService.getDimensions(result);
         res.send(dimensions);
     });
 });
 
-app.get('/:dataSetId/metadata/attributes', (req, res) => {
+app.get('/data/:dataSetId/metadata/attributes', (req, res) => {
     var dataSetId = req.params.dataSetId;
+    console.log('/data/' + dataSetId + '/metadata/attributes');
     var dataSetPromise = oecdData.getDataSet(dataSetId);
-    //https://javascript.info/promise-basics
     dataSetPromise.then(result => {
-        var attributes = oecdData.getAttributes(result);
+        var attributes = oecdDataService.getAttributes(result);
         res.send(attributes);
     });
 });
