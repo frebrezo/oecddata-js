@@ -15,13 +15,10 @@ app.get('/:dataSetId/metadata', (req, res) => {
     var oecdData = new OECDData();
     var dataSetPromise = oecdData.getDataSet(dataSetId);
     //https://javascript.info/promise-basics
-    dataSetPromise.then(
-        dataSet => {
-            var dimensions = oecdData.getDimensions(dataSet);
-            res.send(dimensions);
-        }, error => {
-            console.error('PANIC! Something is very wrong here.');
-        });
+    dataSetPromise.then(result => {
+        var dimensions = oecdData.getDimensions(result);
+        res.send(dimensions);
+    });
 });
 
 // Listen to the App Engine-specified port, or 8080 otherwise

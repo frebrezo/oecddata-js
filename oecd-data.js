@@ -208,20 +208,3 @@ function OECDData() {
 }
 
 module.exports = OECDData;
-
-var dataSetId = 'HH_DASH';
-var oecdData = new OECDData();
-var dataSetPromise = oecdData.getDataSet(dataSetId);
-//https://javascript.info/promise-basics
-dataSetPromise.then(
-    dataSet => {
-        // console.log(dataSet.header.id);
-        // var seriesKeyCodeDict = oecdData.getSeriesKeyCodesMap(dataSet);
-        // var seriesKeyNameDict = oecdData.getSeriesKeyNamesMap(dataSet);
-        // for (var seriesKey in splitSeriesKeyArrDict) {
-        //     console.log(seriesKey + ', ' + oecdData.getSeriesKeyString(seriesKeyCodeDict[seriesKey]) + ', ' + oecdData.getSeriesKeyString(seriesKeyNameDict[seriesKey]));
-        // }
-        oecdData.writeToCSV(dataSetId + '.csv', dataSet);
-    }, error => {
-        console.error('PANIC! Something is very wrong here.');
-    });
